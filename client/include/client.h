@@ -11,12 +11,12 @@ struct pieceMove {
 
 class Chess {
 private:
-  int gstFD; // guest player socket file descriptor
   spot kingspt;
   king_status mode;
   bool castling;
   color player; // Who invites gets white the other gets black
 public:
+  int gstFD; // guest player socket file descriptor
   static chess_piece *board[n][n]; // Each spot contains a pointer to piece
 
   Chess(int sktFD) : mode(good), castling(1), kingspt({7, 4}), gstFD(sktFD) {}
@@ -24,7 +24,7 @@ public:
   int play(); // searchs for available players and returns the guest name and
               // starts the game
   int makeRoom();           // makes a room and returns roomId
-  int joinRoom(int roomId); // takes room ID to join and stat the game
+  int joinRoom(int roomId); // takes room ID to join and starts the game
 
   void init_board(); // puts and initializes players pieces on the board
   void CleanUP();
@@ -38,7 +38,7 @@ public:
   bool safe_spot(spot);
   bool can_move();
   void update_board(spot, spot);
-
   void sendmv(pieceMove);
-  void recvmv();
+  int recvmv();
 };
+
