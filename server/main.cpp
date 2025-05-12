@@ -30,21 +30,17 @@ struct pieceMove
     spot from;
     spot to;
 };
-void Game_handler (int clientFd1,char* player1,int to_send_fd)
+void Game_handler (int clientFd1,char* player1,char* player2,int to_send_fd)
 {
     pieceMove mymove;
     int req;
-    while(recv(clientFd1,&mymove,sizeof(mymove),0)>0)
+    int inner_killed = 1;
+    int is_endd = 0;
+    while((recv(clientFd1,&mymove,sizeof(mymove),0)>0) && inner_killed)
     {
-        if (mymove.from.x == -1) // sender is lost and to_send player is win
+        if(mymove.from.x == -1) // sender is lost and to_send player is win
         {
-            send(to_send_fd,&mymove,sizeof(mymove),0);
-            break;
-        }
-        else if (mymove.from.x == -2 && mymove.from.y == -2) // game ended to draw from first player
-        {
-            send(to_send_fd,&mymove,sizeof(mymove),0);
-            break;
+           is_endd =1;
         }
         else if(mymove.from.x == -3) // I am the winner
         {
@@ -55,8 +51,26 @@ void Game_handler (int clientFd1,char* player1,int to_send_fd)
             break;
         }
         send(to_send_fd,&mymove,sizeof(mymove),0);
+        while(recv(to_send_fd,&mymove,sizeof(mymove),0)>0)
+        {
+            if(mymove.from.x == -3) // I am the winner
+            {
+                inner_killed = 0;
+                break;
+            }
+            else if(mymove.from.x == -2 && mymove.from.y == -1) // game ended to draw from second player
+            {
+                inner_killed = 0;
+                break;
+            }
+            send(clientFd1,&mymove,sizeof(mymove),0);
+            break;
+        }
+        if(is_endd==1)
+        break;
     }
     std::cerr <<"I am "<<player1<<" and my game is over\n";
+    std::cerr <<"I am "<<player2<<" and my game is over\n";
 }
 void clientHandler(int clientFD)
 {
@@ -93,11 +107,8 @@ void clientHandler(int clientFD)
                 Networking::sendInt(waiting_player_fd,&to_play);
                 to_play=0;
                 Networking::sendInt(clientFD,&to_play);
-                std::thread t1(Game_handler,waiting_player_fd,waiting_player,clientFD);
-                std::thread t2(Game_handler,clientFD,playerName,waiting_player_fd);
                 sem_post(&mutex_play); // to take new play requests from others
-                t1.join();
-                t2.join();
+                Game_handler(waiting_player_fd,waiting_player,playerName,clientFD);
                 sem_post(&waiting_player_play); // to make waiting player to request new game
             }
             else
@@ -117,8 +128,8 @@ void clientHandler(int clientFD)
         }
         else if (req == QUIT)// play requests to quit
         {
-          std::cerr << "Player  : " << playerName << " has quited from the server" << std::endl;
-          break;
+            std::cerr << "Player  : " << playerName << " has quited from the server" << std::endl;
+            break;
         }
     }
     close(clientFD);
@@ -128,7 +139,6 @@ int main()
 
     sem_init(&mutex_play,0,1);
     sem_init(&waiting_player_play,0,0);
-
     Networking server(INADDR_ANY, PORT);
 
     if (server.bind() < 0)
