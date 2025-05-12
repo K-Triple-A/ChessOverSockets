@@ -150,14 +150,21 @@ int main()
             cout << "Enter a valid choice!" << endl;
             continue;
         }
-
-        game.init_board();
-        game.draw_board();
         bool ord = (op == 1 ? 1 : 0);
         if(op==1)
         {
             recv(game.gstFD,&ord,sizeof(int),0); // take order based on who requests to play first
+            if(ord == 1)
+            {
+            game.player=white;
+            }
+            else
+            {
+            game.player=black;
+            }
         }
+        game.init_board();
+        game.draw_board();
         bool f = 1;
 
         while (true)

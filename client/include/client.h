@@ -14,9 +14,9 @@ private:
   spot kingspt;
   king_status mode;
   bool castling;
-  color player; // Who invites gets white the other gets black
 public:
   int gstFD; // guest player socket file descriptor
+  color player; // Who invites gets white the other gets black
   static chess_piece *board[n][n]; // Each spot contains a pointer to piece
 
   Chess(int sktFD) : mode(good), castling(1), kingspt({7, 4}), gstFD(sktFD) {}
