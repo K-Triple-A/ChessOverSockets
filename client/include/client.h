@@ -15,7 +15,7 @@ private:
   spot kingspt;
   king_status mode;
   bool castling;
-  color player; // Who invites gets white the other gets black
+  color player; // white player starts first
 public:
   static chess_piece *board[n][n]; // Each spot contains a pointer to piece
 
@@ -30,6 +30,7 @@ public:
   void CleanUP();
   void draw_board(); // clears console and prints current board
   void Print_Killed(color);
+  int getPlayerColor();
 
   king_status update_status();
   bool make_move(spot, spot);
