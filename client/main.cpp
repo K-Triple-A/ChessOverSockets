@@ -123,11 +123,11 @@ int main() {
 
     game.init_board();
     game.draw_board();
-    bool ord = (op == 1 ? 1 : 0);
+    bool ord = game.getPlayerColor();
     bool f = 1;
 
     while (true) {
-      if (ord) {
+      if (!ord) {
         if (f) {
           king_status myst = game.update_status();
           if (myst == lose) {

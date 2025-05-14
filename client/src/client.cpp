@@ -16,7 +16,12 @@ int Chess::play() {
   }
 
   cout << "Searching for players..." << endl;
-
+  int playerColor;
+  if (recv(gstFD, &playerColor, sizeof(playerColor), 0) <= 0) {
+    std::cerr << "Error receiving guest player color!\n";
+    return -1;
+  }
+  Chess::player = (color)(playerColor);
   int totalReceived = 0, sz = (int)sizeof(guest_name);
   while (totalReceived < sz) {
     int revd = recv(gstFD, guest_name + totalReceived, sz, 0);
@@ -51,6 +56,8 @@ int Chess::joinRoom(int roomId) {
   }
   return 0;
 }
+
+int Chess::getPlayerColor() { return player; }
 
 //*******************************
 void Chess::init_board() {
