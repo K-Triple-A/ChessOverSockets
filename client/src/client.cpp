@@ -1,4 +1,6 @@
 #include "../include/client.h"
+
+#include <cstring>
 #include <iostream>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -39,20 +41,67 @@ int Chess::makeRoom() {
   if (send(gstFD, &req, sizeof(int), 0) <= 0) {
     return -1;
   }
-  int roomId;
-  if (recv(gstFD, &roomId, sizeof(int), 0) <= 0) {
+  char roomId[7];
+  if (recv(gstFD, roomId, 7, 0) <= 0) {
     return -1;
   }
-  return roomId;
+  cout<<"Your room ID is : "<<roomId<<endl;
+  int playerColor;
+  if (recv(gstFD, &playerColor, sizeof(playerColor), 0) <= 0) {
+    std::cerr << "Error receiving guest player color in create room!\n";
+    return -1;
+  }
+  Chess::player = (color)(playerColor);
+  int totalReceived = 0, sz = (int)sizeof(guest_name);
+  while (totalReceived < sz) {
+    int revd = recv(gstFD, guest_name + totalReceived, sz, 0);
+    if (revd <= 0) {
+      return -1;
+    }
+    totalReceived += revd;
+  }
+  return 0;
 }
 
-int Chess::joinRoom(int roomId) {
+int Chess::joinRoom() {
   int req = 3;
   if (send(gstFD, &req, sizeof(int), 0) <= 0) {
     return -1;
   }
-  if (send(gstFD, &roomId, sizeof(int), 0) <= 0) {
+  cout << "Enter the room ID: ";
+  char roomId[100];
+  do
+  {
+    cin>>roomId;
+    if (strlen(roomId) == 6){
+      send(gstFD,roomId,7,0);
+      int roomExist = -1;
+      if (recv(gstFD,&roomExist,sizeof(int),0) <= 0){
+        return -1;
+      }
+      if (roomExist == 1)break;
+      else{
+          cout<<"Room ID not exist\nEnter a valid room ID: ";
+      }
+    }else
+    {
+      cout<<"Enter a 6-characters room ID: ";
+    }
+
+  }while (1);
+  int playerColor;
+  if (recv(gstFD, &playerColor, sizeof(playerColor), 0) <= 0) {
+    std::cerr << "Error receiving guest player color!\n";
     return -1;
+  }
+  Chess::player = (color)(playerColor);
+  int totalReceived = 0, sz = (int)sizeof(guest_name);
+  while (totalReceived < sz) {
+    int revd = recv(gstFD, guest_name + totalReceived, sz, 0);
+    if (revd <= 0) {
+      return -1;
+    }
+    totalReceived += revd;
   }
   return 0;
 }

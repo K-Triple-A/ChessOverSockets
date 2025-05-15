@@ -103,16 +103,12 @@ int main() {
         continue;
       }
     } else if (op == 2) {
-      int roomId = game.makeRoom();
-      if (roomId < 0) {
+      if (game.makeRoom() < 0) {
         perror("Error creating room\n");
         continue;
       }
     } else if (op == 3) {
-      int roomId;
-      cout << "Enter the room ID: ";
-      cin >> roomId;
-      if (game.joinRoom(roomId) < 0) {
+      if (game.joinRoom() < 0) {
         perror("Error joining room\n");
         continue;
       }
