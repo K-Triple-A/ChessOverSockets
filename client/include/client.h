@@ -24,8 +24,7 @@ public:
   int play(); // searchs for available players and returns the guest name and
               // starts the game
   int makeRoom();           // makes a room and returns roomId
-  int joinRoom(int roomId); // takes room ID to join and stat the game
-
+  int joinRoom();
   void init_board(); // puts and initializes players pieces on the board
   void CleanUP();
   void draw_board(); // clears console and prints current board
