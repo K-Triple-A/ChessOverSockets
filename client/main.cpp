@@ -74,12 +74,10 @@ int connectServer(int sktFD) {
 
 int main() {
   Print_ASKII_Art();
-
   int serverFD = createServerSocket();
   if (serverFD < 0) {
     exit(1);
   }
-
   cout << "Enter your name: ";
   cin >> player_name;
 
@@ -136,6 +134,9 @@ int main() {
           } else if (myst == draw) {
             cout << "draw" << endl;
             game.sendmv({{-2, -2}, {-2, -2}});
+            break;
+          } else if (myst == win_disconnected) {
+            cout << "Your opponent disconnected. You win!" << endl;
             break;
           }
           f = 0;

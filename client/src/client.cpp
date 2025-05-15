@@ -45,7 +45,7 @@ int Chess::makeRoom() {
   if (recv(gstFD, roomId, 7, 0) <= 0) {
     return -1;
   }
-  cout<<"Your room ID is : "<<roomId<<endl;
+  cout << "Your room ID is : " << roomId << endl;
   int playerColor;
   if (recv(gstFD, &playerColor, sizeof(playerColor), 0) <= 0) {
     std::cerr << "Error receiving guest player color in create room!\n";
@@ -70,25 +70,24 @@ int Chess::joinRoom() {
   }
   cout << "Enter the room ID: ";
   char roomId[100];
-  do
-  {
-    cin>>roomId;
-    if (strlen(roomId) == 6){
-      send(gstFD,roomId,7,0);
+  do {
+    cin >> roomId;
+    if (strlen(roomId) == 6) {
+      send(gstFD, roomId, 7, 0);
       int roomExist = -1;
-      if (recv(gstFD,&roomExist,sizeof(int),0) <= 0){
+      if (recv(gstFD, &roomExist, sizeof(int), 0) <= 0) {
         return -1;
       }
-      if (roomExist == 1)break;
-      else{
-          cout<<"Room ID not exist\nEnter a valid room ID: ";
+      if (roomExist == 1)
+        break;
+      else {
+        cout << "Room ID not exist\nEnter a valid room ID: ";
       }
-    }else
-    {
-      cout<<"Enter a 6-characters room ID: ";
+    } else {
+      cout << "Enter a 6-characters room ID: ";
     }
 
-  }while (1);
+  } while (1);
   int playerColor;
   if (recv(gstFD, &playerColor, sizeof(playerColor), 0) <= 0) {
     std::cerr << "Error receiving guest player color!\n";
@@ -317,7 +316,7 @@ bool Chess::safe_spot(spot spt) {
   return 1;
 }
 king_status Chess::update_status() {
-  if (mode == win || mode == draw)
+  if (mode == win || mode == draw || mode == win_disconnected)
     return mode;
   bool any_piece_move = can_move();
   if (!safe_spot(kingspt)) {
@@ -360,12 +359,14 @@ void Chess::recvmv() {
 
   from = rvdMove.from;
   to = rvdMove.to;
-
-  if (from.x == -1 || bs == 0) {
+  if (from.x == -1) {
     mode = win;
     return;
   } else if (from.x == -2) {
     mode = draw;
+    return;
+  } else if (from.x == -3) {
+    mode = win_disconnected;
     return;
   }
   from.x = 7 - from.x;
