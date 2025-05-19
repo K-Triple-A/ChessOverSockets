@@ -1,5 +1,6 @@
 #include "include/client.h"
 #include <arpa/inet.h>
+#include <csignal>
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
@@ -12,12 +13,15 @@ using namespace std;
 #define PORT 8080
 
 const char *IP = "127.0.0.1";
-
+volatile sig_atomic_t interrupt = 0;
 char player_name[1024];
 char guest_name[1024];
 
 sockaddr_in serverAddr;
-
+void sig_handler(int signo) {
+  interrupt = 1;
+  _exit(1);
+}
 void Print_ASKII_Art() {
   cout << "    _____ _                          \n"
        << "   / ____| |                         \n"
@@ -87,9 +91,14 @@ int main() {
     exit(1);
   }
   cout << "Connected successfully!" << endl;
-
+  struct sigaction sa;
+  sa.sa_handler = sig_handler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART;
+  sigaction(SIGINT, &sa, NULL);
+  sigaction(SIGTERM, &sa, NULL);
   int op;
-  while (true) {
+  while (!interrupt) {
     Chess game(serverFD);
 
     cout << "1- Play\n2- Create a room\n3- Join a room\nEnter (1,2,3): ";
@@ -121,6 +130,7 @@ int main() {
     bool f = 1;
 
     while (true) {
+      cout << "1111" << endl;
       if (!ord) {
         if (f) {
           king_status myst = game.update_status();
@@ -142,22 +152,54 @@ int main() {
           f = 0;
         }
         cout << "Enter a move in form like: d2 d4" << endl;
+        fd_set rset;
+        FD_ZERO(&rset);
+        FD_SET(STDIN_FILENO, &rset);
+        FD_SET(serverFD, &rset);
+        int maxfd = max(STDIN_FILENO, serverFD) + 1;
 
-        char from[3], to[3];
-        cin >> from >> to;
-        int y1 = from[0] - 'a', x1 = (8 - (from[1] - '0'));
-        int y2 = to[0] - 'a', x2 = (8 - (to[1] - '0'));
-        if (game.make_move({x1, y1}, {x2, y2})) {
-          f = 1;
-          game.draw_board();
-          game.sendmv({{x1, y1}, {x2, y2}});
-          ord = !ord;
-        } else {
-          cout << "Not a valid move!" << endl;
+        int ready = select(maxfd, &rset, NULL, NULL, NULL);
+        if (ready < 0) {
+          if (interrupt) {
+            game.sendmv({{-3, -3}, {-3, -3}});
+            break;
+          }
+          perror("select error");
+          break;
+        } else if (ready > 0) {
+          if (FD_ISSET(serverFD, &rset)) {
+            cout << "22" << endl;
+            char buf[1];
+            int peekRet = recv(serverFD, buf, sizeof(buf), 0);
+            cout << "halmos " << peekRet << endl;
+            if (peekRet == 1) {
+              cout << "Opponent disconnected. You win!" << endl;
+              break;
+            }
+          }
+          if (FD_ISSET(STDIN_FILENO, &rset)) {
+            cout << "xas" << endl;
+            char from[3], to[3];
+            cin >> from >> to;
+            int y1 = from[0] - 'a', x1 = (8 - (from[1] - '0'));
+            int y2 = to[0] - 'a', x2 = (8 - (to[1] - '0'));
+            if (game.make_move({x1, y1}, {x2, y2})) {
+              f = 1;
+              game.draw_board();
+              game.sendmv({{x1, y1}, {x2, y2}});
+              ord = !ord;
+            } else {
+              cout << "Not a valid move!" << endl;
+            }
+          }
         }
       } else {
         cout << guest_name << " turn" << endl;
-        game.recvmv();
+        king_status status = game.recvmv();
+        if (status == win_disconnected) {
+          cout << "Your opponent disconnected. You win" << endl;
+          break;
+        }
         game.draw_board();
         ord = !ord;
       }

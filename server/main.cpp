@@ -5,7 +5,6 @@
 #include <map>
 #include <mutex>
 #include <random>
-#include <set>
 #include <sys/socket.h>
 #include <thread>
 
@@ -88,7 +87,8 @@ void gameHandler(int whiteFD, int blackFD) {
       // Peek to see if disconnected
       char buf;
       ssize_t peekRet = recv(waitingFD, &buf, 1, MSG_PEEK | MSG_DONTWAIT);
-      if (peekRet == 0) {
+      if (peekRet == 0 ||
+          (peekRet < 0 && (errno != EAGAIN && errno != EWOULDBLOCK))) {
         // Waiting player disconnected
         std::cerr << "Player with FD " << waitingFD
                   << " disconnected (waiting player).\n";
@@ -98,6 +98,8 @@ void gameHandler(int whiteFD, int blackFD) {
         send(currentFD, &disconnectedMove, sizeof(disconnectedMove), 0);
 
         // Cleanup
+        shutdown(currentFD, SHUT_RDWR);
+        shutdown(waitingFD, SHUT_RDWR);
         close(whiteFD);
         close(blackFD);
         std::lock_guard<std::mutex> lock(mtx);

@@ -351,7 +351,7 @@ bool Chess::can_move() {
 //********************************
 void Chess::sendmv(pieceMove mv) { send(gstFD, &mv, sizeof(mv), 0); }
 
-void Chess::recvmv() {
+king_status Chess::recvmv() {
   spot from = {-1, -1}, to = {-1, -1};
   pieceMove rvdMove;
 
@@ -359,15 +359,19 @@ void Chess::recvmv() {
 
   from = rvdMove.from;
   to = rvdMove.to;
+  if (bs <= 0) {
+    if (bs == 0 || (bs < 0 && (errno != EAGAIN && errno != EWOULDBLOCK))) {
+      return mode = win_disconnected;
+    }
+    return mode;
+  }
   if (from.x == -1) {
-    mode = win;
-    return;
+    return mode = win;
   } else if (from.x == -2) {
-    mode = draw;
-    return;
+    return mode = draw;
+
   } else if (from.x == -3) {
-    mode = win_disconnected;
-    return;
+    return mode = win_disconnected;
   }
   from.x = 7 - from.x;
   to.x = 7 - to.x;
@@ -382,7 +386,7 @@ void Chess::recvmv() {
       swap(board[from.x][from.y], board[0][2]);
       swap(board[to.x][to.y], board[0][3]);
     }
-    return;
+    return good;
   }
 
   if (board[to.x][to.y] &&
@@ -397,6 +401,7 @@ void Chess::recvmv() {
     color enemy = color(!player);
     board[to.x][to.y] = new Queen(enemy);
   }
+  return good;
 }
 void Chess::CleanUP() {
   for (int i = 0; i < n; i++) {
