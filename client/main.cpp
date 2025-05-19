@@ -130,7 +130,6 @@ int main() {
     bool f = 1;
 
     while (true) {
-      cout << "1111" << endl;
       if (!ord) {
         if (f) {
           king_status myst = game.update_status();
@@ -168,17 +167,14 @@ int main() {
           break;
         } else if (ready > 0) {
           if (FD_ISSET(serverFD, &rset)) {
-            cout << "22" << endl;
             char buf[1];
             int peekRet = recv(serverFD, buf, sizeof(buf), 0);
-            cout << "halmos " << peekRet << endl;
             if (peekRet == 1) {
               cout << "Opponent disconnected. You win!" << endl;
               break;
             }
           }
           if (FD_ISSET(STDIN_FILENO, &rset)) {
-            cout << "xas" << endl;
             char from[3], to[3];
             cin >> from >> to;
             int y1 = from[0] - 'a', x1 = (8 - (from[1] - '0'));
