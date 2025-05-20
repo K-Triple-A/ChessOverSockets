@@ -1,5 +1,6 @@
 #include "include/client.h"
 #include <arpa/inet.h>
+#include <csignal>
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
@@ -121,6 +122,7 @@ int main() {
     bool f = 1;
 
     while (true) {
+
       if (!ord) {
         if (f) {
           king_status myst = game.update_status();
@@ -142,22 +144,50 @@ int main() {
           f = 0;
         }
         cout << "Enter a move in form like: d2 d4" << endl;
+        fd_set rset;
+        FD_ZERO(&rset);
+        FD_SET(STDIN_FILENO, &rset);
+        FD_SET(serverFD, &rset);
+        int maxfd = max(STDIN_FILENO, serverFD) + 1;
 
-        char from[3], to[3];
-        cin >> from >> to;
-        int y1 = from[0] - 'a', x1 = (8 - (from[1] - '0'));
-        int y2 = to[0] - 'a', x2 = (8 - (to[1] - '0'));
-        if (game.make_move({x1, y1}, {x2, y2})) {
-          f = 1;
-          game.draw_board();
-          game.sendmv({{x1, y1}, {x2, y2}});
-          ord = !ord;
-        } else {
-          cout << "Not a valid move!" << endl;
+        int ready = select(maxfd, &rset, NULL, NULL, NULL);
+        if (ready < 0) {
+
+          perror("select error");
+          break;
+        } else if (ready > 0) {
+          if (FD_ISSET(serverFD, &rset)) {
+
+            char buf[1];
+            int peekRet = recv(serverFD, buf, sizeof(buf), 0);
+            if (peekRet == 1) {
+              cout << "Opponent disconnected. You win!" << endl;
+              break;
+            }
+          }
+          if (FD_ISSET(STDIN_FILENO, &rset)) {
+
+            char from[3], to[3];
+            cin >> from >> to;
+            int y1 = from[0] - 'a', x1 = (8 - (from[1] - '0'));
+            int y2 = to[0] - 'a', x2 = (8 - (to[1] - '0'));
+            if (game.make_move({x1, y1}, {x2, y2})) {
+              f = 1;
+              game.draw_board();
+              game.sendmv({{x1, y1}, {x2, y2}});
+              ord = !ord;
+            } else {
+              cout << "Not a valid move!" << endl;
+            }
+          }
         }
       } else {
         cout << guest_name << " turn" << endl;
-        game.recvmv();
+        king_status status = game.recvmv();
+        if (status == win_disconnected) {
+          cout << "Your opponent disconnected. You win" << endl;
+          break;
+        }
         game.draw_board();
         ord = !ord;
       }
