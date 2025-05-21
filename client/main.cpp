@@ -139,7 +139,7 @@ int main() {
             break;
           } else if (myst == win_disconnected) {
             cout << "Your opponent disconnected. You win!" << endl;
-            break;
+            exit(0);
           }
           f = 0;
         }
@@ -162,7 +162,7 @@ int main() {
             int peekRet = recv(serverFD, buf, sizeof(buf), 0);
             if (peekRet == 1) {
               cout << "Opponent disconnected. You win!" << endl;
-              break;
+              exit(0);
             }
           }
           if (FD_ISSET(STDIN_FILENO, &rset)) {
@@ -186,7 +186,7 @@ int main() {
         king_status status = game.recvmv();
         if (status == win_disconnected) {
           cout << "Your opponent disconnected. You win" << endl;
-          break;
+          exit(0);
         }
         game.draw_board();
         ord = !ord;
