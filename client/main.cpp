@@ -91,22 +91,22 @@ int main() {
   }
   cout << "Connected successfully!" << endl;
 
-  int op = 1; // initalize to handle if server crashes and client didn't enter operation
+  int op = 1; // initalize to handle if server crashes and client didn't enter
+              // operation
   while (true) {
     Chess game(serverFD);
 
     cout << "1- Play\n2- Create a room\n3- Join a room\nEnter (1,2,3): ";
-    fflush(stdout);// to flush it because we use select with stdin 
+    fflush(stdout); // to flush it because we use select with stdin
     // to handle server crash
     FD_ZERO(&rset);
-    FD_SET(fileno(stdin),&rset);
-    FD_SET(serverFD,&rset);
-    maxfdp1=max(fileno(stdin),serverFD) + 1;
-    select(maxfdp1,&rset,NULL,NULL,NULL); 
+    FD_SET(fileno(stdin), &rset);
+    FD_SET(serverFD, &rset);
+    maxfdp1 = max(fileno(stdin), serverFD) + 1;
+    select(maxfdp1, &rset, NULL, NULL, NULL);
 
-    if(FD_ISSET(fileno(stdin),&rset))
-    {
-    cin >> op;
+    if (FD_ISSET(fileno(stdin), &rset)) {
+      cin >> op;
     }
     if (op == 1) {
       if (game.play() < 0) {
@@ -151,7 +151,7 @@ int main() {
             break;
           } else if (myst == win_disconnected) {
             cout << "Your opponent disconnected. You win!" << endl;
-            break;
+            exit(0);
           }
           f = 0;
         }
@@ -174,11 +174,10 @@ int main() {
             int peekRet = recv(serverFD, buf, sizeof(buf), 0);
             if (peekRet == 1) {
               cout << "Opponent disconnected. You win!" << endl;
-              break;
-            }
-            else if(peekRet == 0){
-            cout<<"server disconnectod."<<endl;
-            return 0;
+              exit(0);
+            } else if (peekRet == 0) {
+              cout << "server disconnectod." << endl;
+              return 0;
             }
           }
           if (FD_ISSET(STDIN_FILENO, &rset)) {
@@ -202,11 +201,10 @@ int main() {
         king_status status = game.recvmv();
         if (status == win_disconnected) {
           cout << "Your opponent disconnected. You win" << endl;
-          break;
-        }
-        else if(status == server_disconnected) {
-           cout<<"server disconnectod."<<endl;
-           return -1;
+          exit(0);
+        } else if (status == server_disconnected) {
+          cout << "server disconnectod." << endl;
+          return -1;
         }
         game.draw_board();
         ord = !ord;
