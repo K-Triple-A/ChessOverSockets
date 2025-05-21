@@ -414,10 +414,13 @@ king_status Chess::recvmv() {
   from = rvdMove.from;
   to = rvdMove.to;
   if (bs <= 0) {
-    if (bs == 0 || (bs < 0 && (errno != EAGAIN && errno != EWOULDBLOCK))) {
-      return mode = win_disconnected;
-    }
-    return mode;
+        if(bs==0){
+           return server_disconnected;
+        }
+        if (bs < 0 && (errno != EAGAIN && errno != EWOULDBLOCK)){
+            return mode = win_disconnected;
+        }
+        return mode;
   }
   if (from.x == -1) {
     return mode = win;

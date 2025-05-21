@@ -1,5 +1,5 @@
 #include "pieces.h"
-enum king_status { good, checkmate, draw, lose, win, win_disconnected };
+enum king_status { good, checkmate, draw, lose, win, win_disconnected , server_disconnected };
 const char icons[2][6][7] = {{"♟︎", "♜", "♞", "♝", "♚", "♛"},
                              {"♙", "♖", "♘", "♗", "♔", "♕"}};
 const int n = 8;

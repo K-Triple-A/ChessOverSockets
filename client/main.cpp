@@ -204,6 +204,10 @@ int main() {
           cout << "Your opponent disconnected. You win" << endl;
           break;
         }
+        else if(status == server_disconnected) {
+           cout<<"server disconnectod."<<endl;
+           return -1;
+        }
         game.draw_board();
         ord = !ord;
       }
