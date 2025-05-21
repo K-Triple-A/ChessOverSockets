@@ -1,6 +1,5 @@
 #include "include/client.h"
 #include <arpa/inet.h>
-#include <csignal>
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
