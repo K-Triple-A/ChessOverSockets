@@ -1,5 +1,5 @@
 #include "pieces.h"
-enum king_status { good, checkmate, draw, lose, win };
+enum king_status { good, checkmate, draw, lose, win, win_disconnected };
 const char icons[2][6][7] = {{"♟︎", "♜", "♞", "♝", "♚", "♛"},
                              {"♙", "♖", "♘", "♗", "♔", "♕"}};
 const int n = 8;
@@ -23,7 +23,7 @@ public:
 
   int play(); // searchs for available players and returns the guest name and
               // starts the game
-  int makeRoom();           // makes a room and returns roomId
+  int makeRoom(); // makes a room and returns roomId
   int joinRoom();
   void init_board(); // puts and initializes players pieces on the board
   void CleanUP();
@@ -40,5 +40,5 @@ public:
   void update_board(spot, spot);
 
   void sendmv(pieceMove);
-  void recvmv();
+  king_status recvmv();
 };
