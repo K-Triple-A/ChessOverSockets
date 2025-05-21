@@ -16,6 +16,8 @@ const char *IP = "127.0.0.1";
 
 char player_name[1024];
 char guest_name[1024];
+fd_set rset; // used for server crash
+int maxfdp1; // used for server crash
 
 sockaddr_in serverAddr;
 
@@ -89,13 +91,23 @@ int main() {
   }
   cout << "Connected successfully!" << endl;
 
-  int op;
+  int op = 1; // initalize to handle if server crashes and client didn't enter operation
   while (true) {
     Chess game(serverFD);
 
     cout << "1- Play\n2- Create a room\n3- Join a room\nEnter (1,2,3): ";
-    cin >> op;
+    fflush(stdout);// to flush it because we use select with stdin 
+    // to handle server crash
+    FD_ZERO(&rset);
+    FD_SET(fileno(stdin),&rset);
+    FD_SET(serverFD,&rset);
+    maxfdp1=max(fileno(stdin),serverFD) + 1;
+    select(maxfdp1,&rset,NULL,NULL,NULL); 
 
+    if(FD_ISSET(fileno(stdin),&rset))
+    {
+    cin >> op;
+    }
     if (op == 1) {
       if (game.play() < 0) {
         perror("Error play game\n");
@@ -163,6 +175,10 @@ int main() {
             if (peekRet == 1) {
               cout << "Opponent disconnected. You win!" << endl;
               break;
+            }
+            else if(peekRet == 0){
+            cout<<"server disconnectod."<<endl;
+            return 0;
             }
           }
           if (FD_ISSET(STDIN_FILENO, &rset)) {

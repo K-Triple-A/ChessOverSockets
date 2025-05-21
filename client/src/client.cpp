@@ -10,6 +10,8 @@ chess_piece *Chess::board[n][n] = {nullptr};
 
 extern char player_name[1024];
 extern char guest_name[1024];
+extern fd_set rset; // used for server crash
+extern int maxfdp1; // used for server crash
 
 int Chess::play() {
   int temp = 1;
@@ -26,11 +28,18 @@ int Chess::play() {
   Chess::player = (color)(playerColor);
   int totalReceived = 0, sz = (int)sizeof(guest_name);
   while (totalReceived < sz) {
-    int revd = recv(gstFD, guest_name + totalReceived, sz, 0);
-    if (revd <= 0) {
-      return -1;
+    FD_ZERO(&rset);
+    FD_SET(gstFD,&rset);
+    maxfdp1= gstFD + 1;
+    select(maxfdp1,&rset,NULL,NULL,NULL);
+    if(FD_ISSET(gstFD,&rset))
+    {
+        int revd = recv(gstFD, guest_name + totalReceived, sz, 0);
+        if (revd <= 0) {
+           return -1;
+        }
+        totalReceived += revd;
     }
-    totalReceived += revd;
   }
 
   return 0;
@@ -42,23 +51,40 @@ int Chess::makeRoom() {
     return -1;
   }
   char roomId[7];
-  if (recv(gstFD, roomId, 7, 0) <= 0) {
-    return -1;
+  if(FD_ISSET(gstFD,&rset))
+  {
+     if (recv(gstFD, roomId, 7, 0) <= 0) {
+      return -1;
+     }
   }
   cout << "Your room ID is : " << roomId << endl;
   int playerColor;
-  if (recv(gstFD, &playerColor, sizeof(playerColor), 0) <= 0) {
-    std::cerr << "Error receiving guest player color in create room!\n";
-    return -1;
+  FD_ZERO(&rset);
+  FD_SET(gstFD,&rset);
+  maxfdp1= gstFD + 1;
+  select(maxfdp1,&rset,NULL,NULL,NULL);
+  if(FD_ISSET(gstFD,&rset))
+  {
+     if (recv(gstFD, &playerColor, sizeof(playerColor), 0) <= 0) {
+        std::cerr << "Error receiving guest player color in create room!\n";
+        return -1;
+        }
   }
   Chess::player = (color)(playerColor);
   int totalReceived = 0, sz = (int)sizeof(guest_name);
   while (totalReceived < sz) {
-    int revd = recv(gstFD, guest_name + totalReceived, sz, 0);
-    if (revd <= 0) {
-      return -1;
-    }
-    totalReceived += revd;
+     FD_ZERO(&rset);
+     FD_SET(gstFD,&rset);
+     maxfdp1= gstFD + 1;
+     select(maxfdp1,&rset,NULL,NULL,NULL);
+     if(FD_ISSET(gstFD,&rset))
+     {
+          int revd = recv(gstFD, guest_name + totalReceived, sz, 0);
+          if (revd <= 0) {
+            return -1;
+          }
+          totalReceived += revd;
+     }
   }
   return 0;
 }
@@ -69,38 +95,66 @@ int Chess::joinRoom() {
     return -1;
   }
   cout << "Enter the room ID: ";
+  fflush(stdout); // to flush output because we are select with stdin
   char roomId[100];
-  do {
+  do { 
+    FD_ZERO(&rset);
+    FD_SET(fileno(stdin),&rset);
+    FD_SET(gstFD,&rset);
+    maxfdp1=max(fileno(stdin),gstFD) + 1;
+    select(maxfdp1,&rset,NULL,NULL,NULL);
+    if(FD_ISSET(fileno(stdin),&rset))
+    {
     cin >> roomId;
+    }
     if (strlen(roomId) == 6) {
       send(gstFD, roomId, 7, 0);
       int roomExist = -1;
-      if (recv(gstFD, &roomExist, sizeof(int), 0) <= 0) {
-        return -1;
+      if(FD_ISSET(gstFD,&rset))
+      {
+          if (recv(gstFD, &roomExist, sizeof(int), 0) <= 0) {
+           return -1;
+           }
       }
       if (roomExist == 1)
         break;
       else {
         cout << "Room ID not exist\nEnter a valid room ID: ";
+        fflush(stdout);// to flush output because we are select with stdin
       }
     } else {
       cout << "Enter a 6-characters room ID: ";
+      fflush(stdout);// to flush output because we are select with stdin
     }
 
   } while (1);
   int playerColor;
-  if (recv(gstFD, &playerColor, sizeof(playerColor), 0) <= 0) {
-    std::cerr << "Error receiving guest player color!\n";
-    return -1;
+  FD_ZERO(&rset);
+  FD_SET(gstFD,&rset);
+  maxfdp1= gstFD + 1;
+  select(maxfdp1,&rset,NULL,NULL,NULL);
+  if(FD_ISSET(gstFD,&rset))
+  {
+      if (recv(gstFD, &playerColor, sizeof(playerColor), 0) <= 0) {
+      std::cerr << "Error receiving guest player color!\n";
+      return -1;
+      }
   }
   Chess::player = (color)(playerColor);
   int totalReceived = 0, sz = (int)sizeof(guest_name);
   while (totalReceived < sz) {
-    int revd = recv(gstFD, guest_name + totalReceived, sz, 0);
-    if (revd <= 0) {
-      return -1;
+    FD_ZERO(&rset);
+    FD_SET(gstFD,&rset);
+    maxfdp1= gstFD + 1;
+    select(maxfdp1,&rset,NULL,NULL,NULL);
+    if(FD_ISSET(gstFD,&rset))
+    {
+         int revd = recv(gstFD, guest_name + totalReceived, sz, 0);
+         if (revd <= 0) {
+         return -1;
+         }
+         totalReceived += revd;
     }
-    totalReceived += revd;
   }
   return 0;
 }
