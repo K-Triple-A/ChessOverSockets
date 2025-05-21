@@ -277,7 +277,7 @@ bool Chess::check_move(spot from, spot to) {
   bool sgn = 0;
   if (from.x == kingspt.x && from.y == kingspt.y && board[to.x][to.y] &&
       board[to.x][to.y]->get_type() == rook) {
-    if (!castling || mode == checkmate)
+    if (!safe_spot(kingspt) || !castling || mode == checkmate)
       return 0;
     return 1;
   }
@@ -467,5 +467,4 @@ void Chess::CleanUP() {
         delete board[i][j];
     }
   }
-  close(gstFD);
 }
